@@ -11,7 +11,7 @@ Clone the rep: git clone ht&#8203;tps://git@github.com:roecrew/Datamosh.git
 
 then
 
-Either open the xcode project and run the application.
+Open the xcode project and run the application.
 
 or
 
