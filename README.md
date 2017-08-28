@@ -9,6 +9,14 @@ Datamosh your videos on macOS
 
 Clone the rep: git clone ht&#8203;tps://git@github.com:roecrew/Datamosh.git
 
+Then
+
+Either open the xcode project and run the application.
+
+Or
+
+Open the application file provided.
+
 ## Supported Filetypes
 
 * mp4
