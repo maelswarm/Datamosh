@@ -9,6 +9,6 @@ Clone the rep: git clone ht&#8203;tps://git@github.com:roecrew/Datamosh.git
 
 ## Supported Filetypes
 
-    mp4
-    mkv
-    aiv
+* mp4
+* mkv
+* aiv
