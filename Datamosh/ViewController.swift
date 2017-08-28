@@ -26,6 +26,9 @@ class ViewController: NSViewController {
     var startSlider : NSSlider?
     var endSlider : NSSlider?
     var glitchSlider : NSSlider?
+    var startText : NSText?
+    var endText : NSText?
+    var intensityText : NSText?
     
     var origUrl : NSURL?
     var videoData : NSMutableData?
@@ -34,6 +37,8 @@ class ViewController: NSViewController {
     
     override func viewWillAppear() {
         super.viewDidLoad()
+        
+        self.view.layer?.backgroundColor = CGColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
         
         self.openPanel = NSOpenPanel()
         self.openPanel?.canChooseFiles = true
@@ -79,14 +84,45 @@ class ViewController: NSViewController {
         
         self.payLoad = NSTextField(frame: NSMakeRect(340, 10, 100, 50))
         self.payLoad?.isEditable = true
+        self.payLoad?.stringValue = "000001"
         self.view.addSubview(self.payLoad!)
     
-        self.startSlider = NSSlider(frame: NSMakeRect(450, 60, self.view.frame.width-450, 25))
+        self.startText = NSText(frame: NSMakeRect(450, 50, 90, 25))
+        self.startText?.string = "Start"
+        self.startText?.isEditable = false
+        self.startText?.alignment = NSTextAlignment.right
+        self.startText?.backgroundColor = NSColor(cgColor: (self.view.layer?.backgroundColor)!)
+        self.view.addSubview(self.startText!)
+        
+        self.startSlider = NSSlider(frame: NSMakeRect(550, 55, self.view.frame.width-450, 25))
         self.startSlider?.maxValue = 100.0
-        self.endSlider = NSSlider(frame: NSMakeRect(450, 35, self.view.frame.width-450, 25))
+        self.startSlider?.doubleValue = 5.0
+        self.startSlider?.target = self
+        self.startSlider?.action = #selector(startSliderValueChanged)
+        
+        self.endText = NSText(frame: NSMakeRect(450, 25, 90, 25))
+        self.endText?.string = "End"
+        self.endText?.isEditable = false
+        self.endText?.alignment = NSTextAlignment.right
+        self.endText?.backgroundColor = NSColor(cgColor: (self.view.layer?.backgroundColor)!)
+        self.view.addSubview(self.endText!)
+        
+        self.endSlider = NSSlider(frame: NSMakeRect(550, 30, self.view.frame.width-450, 25))
         self.endSlider?.maxValue = 100.0
-        self.glitchSlider = NSSlider(frame: NSMakeRect(450, 10, self.view.frame.width-450, 25))
+        self.endSlider?.doubleValue = 95.0
+        self.endSlider?.target = self
+        self.endSlider?.action = #selector(endSliderValueChanged)
+        
+        self.intensityText = NSText(frame: NSMakeRect(450, 0, 90, 25))
+        self.intensityText?.string = "Intensity"
+        self.intensityText?.isEditable = false
+        self.intensityText?.alignment = NSTextAlignment.right
+        self.intensityText?.backgroundColor = NSColor(cgColor: (self.view.layer?.backgroundColor)!)
+        self.view.addSubview(self.intensityText!)
+        
+        self.glitchSlider = NSSlider(frame: NSMakeRect(550, 5, self.view.frame.width-450, 25))
         self.glitchSlider?.maxValue = 1000000
+        self.glitchSlider?.doubleValue = 900000.0
         
         self.view.addSubview(self.startSlider!)
         self.view.addSubview(self.endSlider!)
@@ -121,25 +157,6 @@ class ViewController: NSViewController {
         self.savePanel?.nameFieldStringValue = trimmedName!
         self.savePanel?.allowedFileTypes = Array(arrayLiteral: ext)
     }
-//    - (void)selectFormat:(id)sender
-//    {
-//    NSPopUpButton *button                 = (NSPopUpButton *)sender;
-//    NSInteger      selectedItemIndex      = [button indexOfSelectedItem];
-//    NSString      *nameFieldString        = [[self savePanel] nameFieldStringValue];
-//    NSString      *trimmedNameFieldString = [nameFieldString stringByDeletingPathExtension];
-//    NSString      *extension;
-//    
-//    if (selectedItemIndex == 0)
-//    extension = @"jpg";
-//    else if (selectedItemIndex == 1)
-//    extension = @"gif";
-//    else
-//    extension = @"png";
-//    
-//    NSString *nameFieldStringWithExt = [NSString stringWithFormat:@"%@.%@", trimmedNameFieldString, extension];
-//    [[self savePanel] setNameFieldStringValue:nameFieldStringWithExt];
-//    [[self savePanel] setAllowedFileTypes:@[extension]];
-//    }
     
     func loadFile() {
         self.openPanel?.runModal()
@@ -178,7 +195,7 @@ class ViewController: NSViewController {
         let start = self.startSlider?.doubleValue
         let end = self.endSlider?.doubleValue
         for i in Int(Double((self.videoData?.length)!)*(start!/100.0))..<Int(Double((self.videoData?.length)!)*(end!/100.0)) {
-            if (i%(self.glitchSlider?.integerValue)!) == 0 {
+            if (i%(1000000 - (self.glitchSlider?.integerValue)!)) == 0 {
                 for j in 0..<array.count {
                     self.videoData?.replaceBytes(in: NSRange(location: i, length: 1), withBytes: &array[j])
                 }
@@ -219,6 +236,18 @@ class ViewController: NSViewController {
     
     func update() {
         self.tracker?.doubleValue = Double(CMTimeGetSeconds((self.player?.currentTime())!))
+    }
+    
+    func startSliderValueChanged() {
+        if((self.startSlider?.doubleValue)! > (self.endSlider?.doubleValue)!) {
+            self.endSlider?.doubleValue = (self.startSlider?.doubleValue)!
+        }
+    }
+    
+    func endSliderValueChanged() {
+        if((self.startSlider?.doubleValue)! > (self.endSlider?.doubleValue)!) {
+            self.startSlider?.doubleValue = (self.endSlider?.doubleValue)!
+        }
     }
     
     func trackerDrag() {
