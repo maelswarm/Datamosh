@@ -9,11 +9,11 @@ Datamosh your videos on macOS
 
 Clone the rep: git clone ht&#8203;tps://git@github.com:roecrew/Datamosh.git
 
-Then
+then
 
 Either open the xcode project and run the application.
 
-Or
+or
 
 Open the application file provided.
 
