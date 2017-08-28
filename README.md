@@ -20,5 +20,4 @@ Open the application file provided.
 ## Supported Filetypes
 
 * mp4
-* mkv
 * aiv
