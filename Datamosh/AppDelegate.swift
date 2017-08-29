@@ -9,7 +9,7 @@
 import Cocoa
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     let viewController = ViewController()
     let window = NSWindow(contentRect: NSMakeRect(0, 0, NSScreen.main()!.frame.size.width, NSScreen.main()!.frame.size.height), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: NSBackingStoreType.buffered, defer: false)
@@ -64,6 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         viewController.view.wantsLayer = true
         window.contentView!.addSubview(viewController.view)
         window.makeKeyAndOrderFront(nil)
+        window.delegate = self
         viewController.create()
         
 //        NSRect newFrame = [[NSScreen mainScreen] frame];
@@ -181,5 +182,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return .terminateNow
     }
 
+    func windowDidResize(_ notification: Notification) {
+        viewController.view.frame = NSMakeRect(0, 0, window.frame.size.width, window.frame.size.height)
+        self.viewController.resize()
+    }
+    
 }
 

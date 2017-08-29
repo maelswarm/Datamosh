@@ -32,6 +32,8 @@ class ViewController: NSViewController {
     var intensityText : NSText?
     var timeMeter : NSText?
     
+    var hoverText : HoverText?
+    
     var origUrl : NSURL?
     var videoData : NSMutableData?
     
@@ -39,7 +41,7 @@ class ViewController: NSViewController {
     
     func create() {
         
-        self.view.layer?.backgroundColor = CGColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+        self.view.layer?.backgroundColor = CGColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0)
         
         self.openPanel = NSOpenPanel()
         self.openPanel?.canChooseFiles = true
@@ -81,6 +83,7 @@ class ViewController: NSViewController {
         self.timeMeter?.string = "00.00/00.00"
         self.timeMeter?.isEditable = false
         self.timeMeter?.alignment = NSTextAlignment.right
+        self.timeMeter?.textColor = NSColor.white
         self.timeMeter?.backgroundColor = NSColor(cgColor: (self.view.layer?.backgroundColor)!)
         self.view.addSubview(self.timeMeter!)
         
@@ -99,6 +102,7 @@ class ViewController: NSViewController {
         self.startText?.string = "Start"
         self.startText?.isEditable = false
         self.startText?.alignment = NSTextAlignment.right
+        self.startText?.textColor = NSColor.white
         self.startText?.backgroundColor = NSColor(cgColor: (self.view.layer?.backgroundColor)!)
         self.view.addSubview(self.startText!)
         
@@ -112,6 +116,7 @@ class ViewController: NSViewController {
         self.endText?.string = "End"
         self.endText?.isEditable = false
         self.endText?.alignment = NSTextAlignment.right
+        self.endText?.textColor = NSColor.white
         self.endText?.backgroundColor = NSColor(cgColor: (self.view.layer?.backgroundColor)!)
         self.view.addSubview(self.endText!)
         
@@ -125,12 +130,24 @@ class ViewController: NSViewController {
         self.intensityText?.string = "Intensity"
         self.intensityText?.isEditable = false
         self.intensityText?.alignment = NSTextAlignment.right
+        self.intensityText?.textColor = NSColor.white
         self.intensityText?.backgroundColor = NSColor(cgColor: (self.view.layer?.backgroundColor)!)
         self.view.addSubview(self.intensityText!)
         
         self.glitchSlider = NSSlider(frame: NSMakeRect(650, 5, self.view.frame.width-700, 25))
-        self.glitchSlider?.maxValue = 1000000
+        self.glitchSlider?.maxValue = 999999.0
         self.glitchSlider?.doubleValue = 900000.0
+        self.glitchSlider?.target = self
+        self.glitchSlider?.action = #selector(glitchSliderValueChanged)
+        
+        self.hoverText = HoverText(frame: NSMakeRect(self.view.frame.width/2.0 - 175, self.view.frame.height/2.0 - 50, 350, 100))
+        self.hoverText?.alphaValue = 0.0
+        self.hoverText?.font = NSFont(name: "Arial", size: 82)
+        self.hoverText?.backgroundColor = NSColor.black
+        self.hoverText?.textColor = NSColor.white
+        self.hoverText?.alignment = NSTextAlignment.center
+        self.hoverText?.isEditable = false
+        self.view.addSubview(self.hoverText!)
         
         self.view.addSubview(self.startSlider!)
         self.view.addSubview(self.endSlider!)
@@ -175,11 +192,13 @@ class ViewController: NSViewController {
         self.player = VideoPlayer(playerItem: newItem)
         self.player?.currentItem?.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
         self.origUrl = openPanel?.url as NSURL?
-        let playerLayer = AVPlayerLayer(player: player)
-        playerLayer.frame = NSMakeRect(0, 100, self.view.frame.width, self.view.frame.height-100)
-        playerLayer.backgroundColor = CGColor.init(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
-        playerLayer.videoGravity = AVLayerVideoGravityResizeAspect
-        self.view.layer?.addSublayer(playerLayer)
+        self.playerLayer = AVPlayerLayer(player: player)
+        self.playerLayer?.frame = NSMakeRect(0, 100, self.view.frame.width, self.view.frame.height-100)
+        self.playerLayer?.backgroundColor = CGColor.init(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0)
+        self.playerLayer?.videoGravity = AVLayerVideoGravityResizeAspect
+        self.view.layer?.addSublayer(self.playerLayer!)
+        self.hoverText?.removeFromSuperview()
+        self.view.addSubview(self.hoverText!)
     }
     
     func saveFile() {
@@ -197,6 +216,12 @@ class ViewController: NSViewController {
     }
     
     func glitch() {
+        
+        if (player?.rate != 0.0) {
+            self.player?.pause()
+            self.playButton?.title = "Play"
+            self.timer?.invalidate()
+        }
         
         var array: [UInt8] = Array((self.payLoad?.stringValue.utf8)!)
         for j in 0..<array.count {
@@ -225,24 +250,32 @@ class ViewController: NSViewController {
         self.player?.currentItem?.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
         self.playerLayer = AVPlayerLayer(player: player)
         self.playerLayer?.frame = NSMakeRect(0, 100, self.view.frame.width, self.view.frame.height-100)
-        self.playerLayer?.backgroundColor = CGColor.init(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
+        self.playerLayer?.backgroundColor = CGColor.init(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0)
         self.playerLayer?.videoGravity = AVLayerVideoGravityResizeAspect
         self.view.layer?.addSublayer(self.playerLayer!)
+        self.hoverText?.removeFromSuperview()
+        self.view.addSubview(self.hoverText!)
     }
     
     func reset() {
-        if (player?.rate != 0.0) {
-            self.player?.pause()
+        if(self.origUrl != nil) {
+            if (player?.rate != 0.0) {
+                self.player?.pause()
+                self.playButton?.title = "Play"
+                self.timer?.invalidate()
+            }
+            self.player = nil
+            self.playerLayer = nil
+            self.player = VideoPlayer(url: self.origUrl! as URL)
+            self.player?.currentItem?.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
+            self.playerLayer = AVPlayerLayer(player: player)
+            self.playerLayer?.frame = NSMakeRect(0, 100, self.view.frame.width, self.view.frame.height-100)
+            self.playerLayer?.backgroundColor = CGColor.init(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0)
+            self.playerLayer?.videoGravity = AVLayerVideoGravityResizeAspect
+            self.view.layer?.addSublayer(self.playerLayer!)
+            self.hoverText?.removeFromSuperview()
+            self.view.addSubview(self.hoverText!)
         }
-        self.player = nil
-        self.playerLayer = nil
-        self.player = VideoPlayer(url: self.origUrl! as URL)
-        self.player?.currentItem?.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
-        self.playerLayer = AVPlayerLayer(player: player)
-        self.playerLayer?.frame = NSMakeRect(0, 100, self.view.frame.width, self.view.frame.height-100)
-        self.playerLayer?.backgroundColor = CGColor.init(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
-        self.playerLayer?.videoGravity = AVLayerVideoGravityResizeAspect
-        self.view.layer?.addSublayer(self.playerLayer!)
     }
     
     func playVideo() {
@@ -263,25 +296,47 @@ class ViewController: NSViewController {
     }
     
     func startSliderValueChanged() {
+        self.hoverText?.alphaValue = 1.0
+        self.hoverText?.fade()
+        self.hoverText?.string = String(round(100*(self.startSlider?.doubleValue)!)/100) + " %"
         if((self.startSlider?.doubleValue)! > (self.endSlider?.doubleValue)!) {
             self.endSlider?.doubleValue = (self.startSlider?.doubleValue)!
         }
     }
     
     func endSliderValueChanged() {
+        self.hoverText?.alphaValue = 1.0
+        self.hoverText?.fade()
+        self.hoverText?.string = String(round(100*(self.endSlider?.doubleValue)!)/100) + " %"
         if((self.startSlider?.doubleValue)! > (self.endSlider?.doubleValue)!) {
             self.startSlider?.doubleValue = (self.endSlider?.doubleValue)!
         }
+    }
+    
+    func glitchSliderValueChanged() {
+        self.hoverText?.alphaValue = 1.0
+        self.hoverText?.fade()
+        self.hoverText?.string = String(round(10000*(self.glitchSlider?.doubleValue)! / 999999.0)/100) + " %"
     }
     
     func trackerDrag() {
         self.player?.seek(to:CMTime(seconds: (self.tracker?.doubleValue)!, preferredTimescale: self.timeScale!))
     }
     
+    func resize() {
+        self.tracker?.frame = NSMakeRect(0, 75, self.view.frame.width-5, 30)
+        self.startSlider?.frame = NSMakeRect(650, 55, self.view.frame.width-700, 25)
+        self.endSlider?.frame = NSMakeRect(650, 30, self.view.frame.width-700, 25)
+        self.playerLayer?.frame = NSMakeRect(0, 100, self.view.frame.width, self.view.frame.height-100)
+        self.glitchSlider?.frame = NSMakeRect(650, 5, self.view.frame.width-700, 25)
+        self.hoverText?.frame = NSMakeRect(self.view.frame.width/2.0 - 175, self.view.frame.height/2.0 - 50, 350, 100)
+    }
+    
 }
 
 extension ViewController: SliderDelegate {
     func sliderTouchUp(_ sender: Slider) {
+        self.hoverText?.fade()
         self.player?.seek(to:CMTime(seconds: (self.tracker?.doubleValue)!, preferredTimescale: self.timeScale!))
         if (self.player?.timeControlStatus.rawValue == AVPlayerTimeControlStatus.playing.rawValue) {
             self.timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(ViewController.update), userInfo: nil, repeats: true)
@@ -289,6 +344,7 @@ extension ViewController: SliderDelegate {
         NSLog("MOUSE UP")
     }
     func sliderTouchDown(_ sender: Slider) {
+        self.hoverText?.alphaValue = 1.0
         if (self.player?.timeControlStatus.rawValue == AVPlayerTimeControlStatus.playing.rawValue) {
             self.timer?.invalidate()
         }
