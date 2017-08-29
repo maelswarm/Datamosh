@@ -15,6 +15,7 @@ class ViewController: NSViewController {
     var openPanel : NSOpenPanel?
     var savePanel : NSSavePanel?
     var player: VideoPlayer?
+    var playerLayer : AVPlayerLayer?
     var tracker : Slider?
     var timeScale : CMTimeScale?
     
@@ -36,8 +37,7 @@ class ViewController: NSViewController {
     
     var timer : Timer?
     
-    override func viewWillAppear() {
-        super.viewDidLoad()
+    func create() {
         
         self.view.layer?.backgroundColor = CGColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
         
@@ -170,6 +170,8 @@ class ViewController: NSViewController {
         self.openPanel?.runModal()
         self.videoData = NSMutableData(contentsOf: (openPanel?.url)!)
         let newItem = AVPlayerItem(url: (openPanel?.url)!)
+        self.player = nil
+        self.playerLayer = nil
         self.player = VideoPlayer(playerItem: newItem)
         self.player?.currentItem?.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
         self.origUrl = openPanel?.url as NSURL?
@@ -217,23 +219,30 @@ class ViewController: NSViewController {
         
         self.videoData?.write(to: (URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("tmp.mp4") as NSURL) as URL, atomically: true)
         let newItem = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("tmp.mp4") as NSURL
+        self.player = nil
+        self.playerLayer = nil
         self.player = VideoPlayer(url: newItem as URL)
         self.player?.currentItem?.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
-        let playerLayer = AVPlayerLayer(player: player)
-        playerLayer.frame = NSMakeRect(0, 100, self.view.frame.width, self.view.frame.height-100)
-        playerLayer.backgroundColor = CGColor.init(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
-        playerLayer.videoGravity = AVLayerVideoGravityResizeAspect
-        self.view.layer?.addSublayer(playerLayer)
+        self.playerLayer = AVPlayerLayer(player: player)
+        self.playerLayer?.frame = NSMakeRect(0, 100, self.view.frame.width, self.view.frame.height-100)
+        self.playerLayer?.backgroundColor = CGColor.init(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
+        self.playerLayer?.videoGravity = AVLayerVideoGravityResizeAspect
+        self.view.layer?.addSublayer(self.playerLayer!)
     }
     
     func reset() {
+        if (player?.rate != 0.0) {
+            self.player?.pause()
+        }
+        self.player = nil
+        self.playerLayer = nil
         self.player = VideoPlayer(url: self.origUrl! as URL)
         self.player?.currentItem?.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
-        let playerLayer = AVPlayerLayer(player: player)
-        playerLayer.frame = NSMakeRect(0, 100, self.view.frame.width, self.view.frame.height-100)
-        playerLayer.backgroundColor = CGColor.init(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
-        playerLayer.videoGravity = AVLayerVideoGravityResizeAspect
-        self.view.layer?.addSublayer(playerLayer)
+        self.playerLayer = AVPlayerLayer(player: player)
+        self.playerLayer?.frame = NSMakeRect(0, 100, self.view.frame.width, self.view.frame.height-100)
+        self.playerLayer?.backgroundColor = CGColor.init(red: 0.5, green: 0.5, blue: 0.5, alpha: 1.0)
+        self.playerLayer?.videoGravity = AVLayerVideoGravityResizeAspect
+        self.view.layer?.addSublayer(self.playerLayer!)
     }
     
     func playVideo() {

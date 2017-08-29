@@ -64,6 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         viewController.view.wantsLayer = true
         window.contentView!.addSubview(viewController.view)
         window.makeKeyAndOrderFront(nil)
+        viewController.create()
         
 //        NSRect newFrame = [[NSScreen mainScreen] frame];
 //        [self.window setFrame:newFrame display:YES animate:NO];
