@@ -29,6 +29,7 @@ class ViewController: NSViewController {
     var startText : NSText?
     var endText : NSText?
     var intensityText : NSText?
+    var timeMeter : NSText?
     
     var origUrl : NSURL?
     var videoData : NSMutableData?
@@ -55,72 +56,79 @@ class ViewController: NSViewController {
         
         self.savePanel?.accessoryView = accessoryView
         
-        let playButtonRect = CGRect(x: 10, y: 10, width: 100, height: 50)
+        let playButtonRect = CGRect(x: 110, y: 10, width: 100, height: 50)
         self.playButton =  NSButton(frame: playButtonRect)
         self.playButton?.title = "Play"
         self.playButton?.target = self
         self.playButton?.action = #selector(ViewController.playVideo)
         self.view.addSubview(self.playButton!)
         
-        let glitchButtonRect = CGRect(x: 120, y: 10, width: 100, height: 50)
+        let glitchButtonRect = CGRect(x: 220, y: 10, width: 100, height: 50)
         self.glitchButton =  NSButton(frame: glitchButtonRect)
         self.glitchButton?.title = "Glitch"
         self.glitchButton?.target = self
         self.glitchButton?.action = #selector(ViewController.glitch)
         self.view.addSubview(self.glitchButton!)
         
-        let resetButtonRect = CGRect(x: 230, y: 10, width: 100, height: 50)
+        let resetButtonRect = CGRect(x: 330, y: 10, width: 100, height: 50)
         self.resetButton =  NSButton(frame: resetButtonRect)
         self.resetButton?.title = "Reset"
         self.resetButton?.target = self
         self.resetButton?.action = #selector(ViewController.reset)
         self.view.addSubview(self.resetButton!)
         
-        self.tracker = Slider(frame: NSMakeRect(0, 75, self.view.frame.width, 30))
+        self.timeMeter = NSText(frame: NSMakeRect(0, 25, 90, 25))
+        self.timeMeter?.string = "00.00/00.00"
+        self.timeMeter?.isEditable = false
+        self.timeMeter?.alignment = NSTextAlignment.right
+        self.timeMeter?.backgroundColor = NSColor(cgColor: (self.view.layer?.backgroundColor)!)
+        self.view.addSubview(self.timeMeter!)
+        
+        self.tracker = Slider(frame: NSMakeRect(0, 75, self.view.frame.width-5, 30))
         self.tracker?.delegate = self
         self.tracker?.target = self
         self.tracker?.action = #selector(trackerDrag)
         self.view.addSubview(self.tracker!)
         
-        self.payLoad = NSTextField(frame: NSMakeRect(340, 10, 100, 50))
+        self.payLoad = NSTextField(frame: NSMakeRect(440, 10, 100, 50))
         self.payLoad?.isEditable = true
         self.payLoad?.stringValue = "000001"
         self.view.addSubview(self.payLoad!)
     
-        self.startText = NSText(frame: NSMakeRect(450, 50, 90, 25))
+        self.startText = NSText(frame: NSMakeRect(550, 50, 90, 25))
         self.startText?.string = "Start"
         self.startText?.isEditable = false
         self.startText?.alignment = NSTextAlignment.right
         self.startText?.backgroundColor = NSColor(cgColor: (self.view.layer?.backgroundColor)!)
         self.view.addSubview(self.startText!)
         
-        self.startSlider = NSSlider(frame: NSMakeRect(550, 55, self.view.frame.width-450, 25))
+        self.startSlider = NSSlider(frame: NSMakeRect(650, 55, self.view.frame.width-700, 25))
         self.startSlider?.maxValue = 100.0
         self.startSlider?.doubleValue = 5.0
         self.startSlider?.target = self
         self.startSlider?.action = #selector(startSliderValueChanged)
         
-        self.endText = NSText(frame: NSMakeRect(450, 25, 90, 25))
+        self.endText = NSText(frame: NSMakeRect(550, 25, 90, 25))
         self.endText?.string = "End"
         self.endText?.isEditable = false
         self.endText?.alignment = NSTextAlignment.right
         self.endText?.backgroundColor = NSColor(cgColor: (self.view.layer?.backgroundColor)!)
         self.view.addSubview(self.endText!)
         
-        self.endSlider = NSSlider(frame: NSMakeRect(550, 30, self.view.frame.width-450, 25))
+        self.endSlider = NSSlider(frame: NSMakeRect(650, 30, self.view.frame.width-700, 25))
         self.endSlider?.maxValue = 100.0
         self.endSlider?.doubleValue = 95.0
         self.endSlider?.target = self
         self.endSlider?.action = #selector(endSliderValueChanged)
         
-        self.intensityText = NSText(frame: NSMakeRect(450, 0, 90, 25))
+        self.intensityText = NSText(frame: NSMakeRect(550, 0, 90, 25))
         self.intensityText?.string = "Intensity"
         self.intensityText?.isEditable = false
         self.intensityText?.alignment = NSTextAlignment.right
         self.intensityText?.backgroundColor = NSColor(cgColor: (self.view.layer?.backgroundColor)!)
         self.view.addSubview(self.intensityText!)
         
-        self.glitchSlider = NSSlider(frame: NSMakeRect(550, 5, self.view.frame.width-450, 25))
+        self.glitchSlider = NSSlider(frame: NSMakeRect(650, 5, self.view.frame.width-700, 25))
         self.glitchSlider?.maxValue = 1000000
         self.glitchSlider?.doubleValue = 900000.0
         
@@ -180,9 +188,9 @@ class ViewController: NSViewController {
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if(self.player?.currentItem?.status.rawValue == AVPlayerStatus.readyToPlay.rawValue){
             self.tracker?.maxValue = CMTimeGetSeconds((self.player?.currentItem?.duration)!)
-            NSLog(" Heeloo %@ Hello", CMTimeGetSeconds((self.player?.currentItem?.duration)!))
             self.tracker?.doubleValue = 0.0
             self.timeScale = self.player?.currentTime().timescale
+            self.timeMeter?.string = "00.00/" + String(CMTimeGetSeconds((self.player?.currentItem?.duration)!))
         }
     }
     
@@ -191,9 +199,14 @@ class ViewController: NSViewController {
         var array: [UInt8] = Array((self.payLoad?.stringValue.utf8)!)
         for j in 0..<array.count {
             array[j] -= 48;
+            array[j] = UInt8(abs(Int(array[j])))
         }
         let start = self.startSlider?.doubleValue
         let end = self.endSlider?.doubleValue
+
+//        
+//        let subdata1 = self.videoData?.subdata(with: NSMakeRange(1000000, 9000000))
+//        self.videoData?.replaceBytes(in: NSRange(location: 1000000, length: 8000000), withBytes: (subdata1 as! NSData).bytes)
         for i in Int(Double((self.videoData?.length)!)*(start!/100.0))..<Int(Double((self.videoData?.length)!)*(end!/100.0)) {
             if (i%(1000000 - (self.glitchSlider?.integerValue)!)) == 0 {
                 for j in 0..<array.count {
@@ -201,6 +214,7 @@ class ViewController: NSViewController {
                 }
             }
         }
+        
         self.videoData?.write(to: (URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("tmp.mp4") as NSURL) as URL, atomically: true)
         let newItem = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("tmp.mp4") as NSURL
         self.player = VideoPlayer(url: newItem as URL)
@@ -236,6 +250,7 @@ class ViewController: NSViewController {
     
     func update() {
         self.tracker?.doubleValue = Double(CMTimeGetSeconds((self.player?.currentTime())!))
+        self.timeMeter?.string = String(round(100*CMTimeGetSeconds((self.player?.currentTime())!))/100) + "/" + String(round(100*CMTimeGetSeconds((self.player?.currentItem?.duration)!))/100)
     }
     
     func startSliderValueChanged() {
